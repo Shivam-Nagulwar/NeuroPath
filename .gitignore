@@ -1,0 +1,11 @@
+# Environments & Secrets
+backend/venv/
+backend/.env
+frontend/node_modules/
+.DS_Store
+
+# Python Cache
+__pycache__/
+*.pyc
+
+*.h5
