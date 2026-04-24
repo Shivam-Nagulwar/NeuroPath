@@ -90,11 +90,21 @@ export default function App() {
       setMriDone(true)
       setBackendStatus('online')
     } catch (err) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `⚠️ MRI analysis failed: ${err.message}`,
-      }])
-      setBackendStatus('error')
+      // Gatekeeper rejection — show a structured warning card in the chat
+      if (err.isGatekeeperRejection && err.detail) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          type: 'gatekeeper_rejection',
+          content: '',
+          data: err.detail,
+        }])
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `⚠️ MRI analysis failed: ${err.message}`,
+        }])
+        setBackendStatus('error')
+      }
     } finally {
       setIsLoading(false)
     }

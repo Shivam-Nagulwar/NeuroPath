@@ -2,7 +2,8 @@
 NeuroPath — cnn_engine.py
 =========================
 CNN inference pipeline + Grad-CAM engine.
-Identical logic to the Colab version, stripped of Gradio dependencies.
+Now includes a Gatekeeper model that validates the uploaded
+image is a brain MRI before passing it to the main classifier.
 """
 
 import base64
@@ -27,6 +28,9 @@ from config import (
     LOBE_SYMPTOM_MAP,
     NUM_CLASSES,
     TUMOUR_LOBE_MAP,
+    GATEKEEPER_MODEL_PATH,
+    GATEKEEPER_IMG_SIZE,
+    GATEKEEPER_THRESHOLD,
 )
 
 tf.get_logger().setLevel("ERROR")
@@ -71,12 +75,16 @@ class GradCAM:
 
 
 # ===============================================================================
-# Model + Engine — loaded once at import time
+# Load Models — once at import time
 # ===============================================================================
+
+print("Loading NeuroPath Gatekeeper model …")
+gatekeeper_model = load_model(GATEKEEPER_MODEL_PATH)
+print(f"  ✓  Gatekeeper loaded from {GATEKEEPER_MODEL_PATH}")
 
 print("Loading NeuroPath CNN model …")
 cnn_model = load_model(BEST_MODEL_PATH)
-print(f"  ✓  Model loaded from {BEST_MODEL_PATH}")
+print(f"  ✓  CNN model loaded from {BEST_MODEL_PATH}")
 print(f"  ✓  Class map: {CLASS_IDX_MAP}")
 
 gradcam_engine = GradCAM(cnn_model)
@@ -91,6 +99,33 @@ def _pil_to_b64(pil_img: Image.Image) -> str:
     buf = io.BytesIO()
     pil_img.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode("utf-8")
+
+
+# ===============================================================================
+# Gatekeeper — is this a valid brain MRI?
+# ===============================================================================
+
+def is_valid_brain_mri(pil_image: Image.Image) -> tuple[bool, float]:
+    """
+    Runs the MobileNetV2 gatekeeper on the uploaded image.
+
+    Returns
+    -------
+    (is_valid: bool, confidence: float)
+        is_valid   — True if the image is a brain MRI, False otherwise
+        confidence — gatekeeper's confidence that it IS a brain MRI (0-100%)
+    """
+    img = pil_image.convert("RGB").resize(GATEKEEPER_IMG_SIZE)
+    arr = img_to_array(img) / 255.0
+    arr = np.expand_dims(arr, axis=0)
+
+    # sigmoid output: 0 = brain_mri, 1 = non_brain_mri
+    score = float(gatekeeper_model.predict(arr, verbose=0)[0][0])
+
+    is_brain   = score < GATEKEEPER_THRESHOLD      # below threshold = brain MRI
+    brain_conf = (1.0 - score) * 100               # confidence it IS brain MRI
+
+    return is_brain, round(brain_conf, 1)
 
 
 # ===============================================================================
@@ -136,6 +171,7 @@ def correlate_symptoms(symptom_text: str, pred_class: str) -> str:
 def run_cnn_analysis(pil_image: Image.Image, symptom_text: str = "") -> dict:
     """
     Runs CNN prediction + Grad-CAM on a PIL image.
+    Assumes the gatekeeper check has already passed.
 
     Returns
     -------
@@ -151,8 +187,8 @@ def run_cnn_analysis(pil_image: Image.Image, symptom_text: str = "") -> dict:
         correlation     str
     """
     # Pre-process
-    img        = pil_image.convert("RGB").resize(IMG_SIZE)
-    arr        = img_to_array(img) / 255.0
+    img          = pil_image.convert("RGB").resize(IMG_SIZE)
+    arr          = img_to_array(img) / 255.0
     preprocessed = np.expand_dims(arr, axis=0)
     original_rgb = np.array(img)
 
@@ -170,7 +206,7 @@ def run_cnn_analysis(pil_image: Image.Image, symptom_text: str = "") -> dict:
         (cm.jet(cv2.resize(heatmap, IMG_SIZE))[:, :, :3] * 255).astype(np.uint8)
     )
 
-    # Probabilities dict  (display label → float)
+    # Probabilities dict (display label → float)
     all_probs = {
         CLASS_LABELS[CLASS_IDX_MAP[i]]: float(preds[i])
         for i in range(NUM_CLASSES)

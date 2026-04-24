@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from PIL import Image
 
-from cnn_engine import run_cnn_analysis, correlate_symptoms
+from cnn_engine import run_cnn_analysis, correlate_symptoms, is_valid_brain_mri
 from gemini_engine import chat_with_triage, extract_symptoms_from_history, generate_report
 
 # ===============================================================================
@@ -120,7 +120,8 @@ async def analyse_mri_endpoint(
 ):
     """
     Accepts a brain MRI image (JPG / PNG).
-    Returns prediction, confidence, probabilities, Grad-CAM and heatmap as base64 PNGs.
+    Step 1: Gatekeeper model validates the image is a brain MRI.
+    Step 2: Xception CNN classifies + Grad-CAM explains.
     """
     if image.content_type not in ("image/jpeg", "image/png", "image/jpg"):
         raise HTTPException(
@@ -134,13 +135,37 @@ async def analyse_mri_endpoint(
     except Exception:
         raise HTTPException(status_code=400, detail="Could not read image file.")
 
+    # ── GATEKEEPER CHECK ──────────────────────────────────────
+    is_brain, gate_confidence = is_valid_brain_mri(pil_image)
+
+    if not is_brain:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "type":        "invalid_image",
+                "title":       "Not a Brain MRI",
+                "message":     (
+                    "The uploaded image does not appear to be a brain MRI scan. "
+                    "Please upload a valid T1 or T2-weighted axial brain MRI (JPG or PNG)."
+                ),
+                "suggestions": [
+                    "Make sure the image is a brain MRI, not a photo or other scan type.",
+                    "Use axial (top-down) T1 or T2-weighted MRI slices.",
+                    "Chest, spine, or knee MRIs are not accepted — brain only.",
+                    "Screenshots or photos of MRI reports are not valid — upload the scan image itself.",
+                ],
+                "gate_confidence": gate_confidence,
+            }
+        )
+    # ── END GATEKEEPER ────────────────────────────────────────
+
     symptom_text = _session.get("symptom_text", "")
     result       = run_cnn_analysis(pil_image, symptom_text)
 
     # Persist MRI results in session for report generation
-    _session["pred_class"] = result["pred_class"]
-    _session["confidence"] = result["confidence"]
-    _session["all_probs"]  = result["probabilities"]
+    _session["pred_class"]  = result["pred_class"]
+    _session["confidence"]  = result["confidence"]
+    _session["all_probs"]   = result["probabilities"]
     _session["correlation"] = result["correlation"]
 
     return {

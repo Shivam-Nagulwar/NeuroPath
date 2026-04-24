@@ -6,6 +6,7 @@
 
 import MRIResultCard from './MRIResultCard'
 import ReportPanel from './ReportPanel'
+import GatekeeperRejectionCard from './GatekeeperRejectionCard'
 
 function extractVisibleText(text) {
   // Strip the raw triage summary block from the visible bubble text
@@ -43,6 +44,17 @@ export default function MessageBubble({ message }) {
   const { role, content, type, data } = message
 
   // ── Special message types injected by App.jsx ────────────
+  if (type === 'gatekeeper_rejection') {
+    return (
+      <div className="message-row">
+        <div className="avatar ai">NP</div>
+        <div style={{ flex: 1, maxWidth: '85%' }}>
+          <GatekeeperRejectionCard data={data} />
+        </div>
+      </div>
+    )
+  }
+
   if (type === 'mri_result') {
     return (
       <div className="message-row">

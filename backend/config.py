@@ -11,7 +11,14 @@ import os
 # Put your .h5 model file inside the backend/models/ folder
 BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
 MODEL_SAVE_DIR  = os.path.join(BASE_DIR, "models")
-BEST_MODEL_PATH = os.path.join(MODEL_SAVE_DIR, "neuropath_xception_best.h5")
+BEST_MODEL_PATH       = os.path.join(MODEL_SAVE_DIR, "neuropath_xception_best.h5")
+
+# ─── Gatekeeper Model (brain MRI validator) ───────────────────────────────────
+# MobileNetV2 binary classifier: brain_mri (0) vs non_brain_mri (1)
+# Place gatekeeper_model.h5 inside backend/models/
+GATEKEEPER_MODEL_PATH = os.path.join(MODEL_SAVE_DIR, "gatekeeper_model.h5")
+GATEKEEPER_IMG_SIZE   = (224, 224)          # MobileNetV2 input size
+GATEKEEPER_THRESHOLD  = 0.5                 # sigmoid > 0.5 = non_brain_mri → reject
 
 # ─── Dataset ─────────────────────────────────────────────────────────────────
 CLASS_NAMES = ["glioma", "meningioma", "notumor", "pituitary"]

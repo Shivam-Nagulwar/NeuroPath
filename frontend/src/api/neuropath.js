@@ -43,8 +43,16 @@ export async function analyseMRI(imageFile) {
     method: 'POST',
     body: formData,
   })
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
+    // Gatekeeper rejection comes back as 422 with a structured detail object
+    if (res.status === 422 && err.detail && err.detail.type === 'invalid_image') {
+      const gatekeeperError = new Error(err.detail.message)
+      gatekeeperError.isGatekeeperRejection = true
+      gatekeeperError.detail = err.detail
+      throw gatekeeperError
+    }
     throw new Error(err.detail || 'MRI analysis failed')
   }
   return res.json()
