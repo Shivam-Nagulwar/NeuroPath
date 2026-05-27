@@ -11,13 +11,7 @@ export default function GatekeeperRejectionCard({ data }) {
   const { title, message, suggestions, gate_confidence } = data
 
   return (
-    <div style={{
-      background: 'var(--bg-elevated)',
-      border: '1px solid rgba(255, 69, 96, 0.4)',
-      borderRadius: 'var(--radius-xl)',
-      overflow: 'hidden',
-      animation: 'fadeSlideIn 0.3s ease',
-    }}>
+    <div className="gatekeeper-card">
 
       {/* Header */}
       <div style={{
@@ -66,6 +60,12 @@ export default function GatekeeperRejectionCard({ data }) {
 
       {/* Message */}
       <div style={{ padding: '16px 18px' }}>
+        {/* Uploaded image preview (if available) */}
+        {data.original_preview && (
+          <div className="gatekeeper-image-wrap">
+            <img src={data.original_preview} alt="Uploaded preview" className="gatekeeper-image" />
+          </div>
+        )}
         <div style={{
           display: 'flex',
           gap: '10px',

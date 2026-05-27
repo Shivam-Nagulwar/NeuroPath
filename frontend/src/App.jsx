@@ -81,9 +81,10 @@ export default function App() {
         content: '',
         data: {
           ...result,
-          original_b64: previewDataUrl
-            ? previewDataUrl.split(',')[1]   // strip "data:image/...;base64,"
-            : null,
+            original_b64: previewDataUrl
+              ? previewDataUrl.split(',')[1]   // strip "data:image/...;base64,"
+              : null,
+            original_preview: previewDataUrl || null,
         },
       }])
 
@@ -96,7 +97,13 @@ export default function App() {
           role: 'assistant',
           type: 'gatekeeper_rejection',
           content: '',
-          data: err.detail,
+            data: {
+              ...err.detail,
+              original_b64: previewDataUrl
+                ? previewDataUrl.split(',')[1]
+                : null,
+              original_preview: previewDataUrl || null,
+            },
         }])
       } else {
         setMessages(prev => [...prev, {

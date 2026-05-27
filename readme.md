@@ -11,11 +11,7 @@
 [![Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=flat&logo=google&logoColor=white)](https://deepmind.google/gemini)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
 
-<br/>
 
-![NeuroPath Banner](https://via.placeholder.com/900x300/0a0a0a/00d4ff?text=NeuroPath+AI+%E2%80%94+Neurological+Triage+%2B+MRI+Analysis)
-
-<br/>
 
 > **⚠️ Medical Disclaimer:** NeuroPath is an AI-powered screening and research tool only.
 > It does **not** constitute a medical diagnosis. Always consult a qualified
@@ -37,7 +33,6 @@
 - [How to Use](#-how-to-use)
 - [API Reference](#-api-reference)
 - [Screenshots](#-screenshots)
-- [Team](#-team)
 - [License](#-license)
 
 ---
@@ -383,18 +378,10 @@ Interactive docs available at: **http://localhost:8000/docs**
 
 ---
 
-## 🤝 Team
+## Screenshots
 
-> Add your team members here
-
-| Name | Role |
-|---|---|
-| — | ML Engineer — CNN training & Grad-CAM |
-| — | AI Engineer — Gemini triage system |
-| — | Backend Developer — FastAPI |
-| — | Frontend Developer — React UI |
-
----
+![MRI Result with Grad-CAM](assets/screenshot_brain%20tumor%20prediction.png)
+![Gateway model](assets/Screenshot_gateway%20model.png)
 
 ## 📄 License
 
